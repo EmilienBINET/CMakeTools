@@ -72,12 +72,18 @@ function( _create_common_internals_parse_src )
   unset( sources_definitions )
   unset( new_src_definitions )
   unset( sources_template )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
   # Option arguments: none
   # Single-value arguments: NAME, COMPILE_FLAGS
   # Multi-values arguments: SOURCES, DEFINITIONS
   cmake_parse_arguments( arg "" "NAME;COMPILE_FLAGS" "SOURCES;DEFINITIONS" ${ARGN} )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the _create_common_internals_parse_src function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # Cannot keep list in the following code
   string( REPLACE ";" "|" arg_DEFINITIONS "${arg_DEFINITIONS}" )
@@ -257,12 +263,18 @@ function( _create_common_internals_parse_dep )
   unset( package_dependencies )
   unset( last_package_dependency )
   unset( current_or )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
   # Option arguments: none
   # Single-value arguments: none
   # Multi-values arguments: DEPENDENCIES
   cmake_parse_arguments( arg "" "" "DEPENDENCIES" ${ARGN} )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the _create_common_internals_parse_dep function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # We suppose that a dependency is internal by default because INTERNAL keyword is optionnal
   set( dep_step "INTERNAL" )
@@ -435,12 +447,18 @@ function( _create_common_internals_find_pkg )
   unset( found )
   unset( include_dirs )
   unset( libraries )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
   # Option arguments: none
   # Single-value arguments: NAME
   # Multi-values arguments: COMPONENTS
   cmake_parse_arguments( arg "" "NAME" "COMPONENTS" ${ARGN} )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the _create_common_internals_find_pkg function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # Get the library name uppercase, since some libraries return uppercase variables and some do not
   string( TOUPPER "${arg_NAME}" arg_NAME_upper )
@@ -573,12 +591,18 @@ function( _create_common_internals_have_definition )
   unset( arg_PACKAGE )
   unset( have_definition )
   unset( have_color )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
   # Option arguments: FOUND
   # Single-value arguments: LIST, NAME, PACKAGE
   # Multi-values arguments: none
   cmake_parse_arguments( arg "FOUND" "LIST;NAME;PACKAGE" "" ${ARGN} )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the _create_common_internals_have_definition function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # Create the have definition
   if( arg_FOUND )
@@ -617,12 +641,18 @@ function( _create_common_internals_print_dep_tree )
   unset( arg_INDENTATION )
   unset( arg_DEPENDENCIES_PUB )
   unset( arg_DEPENDENCIES_PRIV )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
   # Option arguments: none
   # Single-value arguments: NAME, INDENTATION
   # Multi-values arguments: DEPENDENCIES_PUB, DEPENDENCIES_PRIV
   cmake_parse_arguments( arg "" "NAME;INDENTATION" "DEPENDENCIES_PUB;DEPENDENCIES_PRIV" ${ARGN} )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the _create_common_internals_print_dep_tree function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # If the name is provided, it is the recursion root
   if( arg_NAME )
@@ -1091,6 +1121,17 @@ endmacro( _create_common_internals_handle_language_version )
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 macro( _create_common_internals_handle_compile_flags )
+
+  # Handle the update of the __cplusplus macro on MSVC
+  if( arg_MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO )
+    if( MSVC )
+      message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} has updated ${ColorFlags}__cplusplus${ColorReset} macro ${ColorFlags}enabled${ColorReset}" )
+      set_target_properties( ${arg_NAME} PROPERTIES COMPILE_FLAGS "/Zc:__cplusplus" )
+    else()
+      message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} has updated ${ColorFlags}__cplusplus${ColorReset} macro ${ColorWarning}ignored (not MSVC)${ColorReset}" )
+    endif()
+  endif()
+
   # We do not print all files, be only those which have specific build options
   if( PARSED_COMPILE_FLAGS )
     list( LENGTH PARSED_COMPILE_FLAGS nb_specific_compile_flags )

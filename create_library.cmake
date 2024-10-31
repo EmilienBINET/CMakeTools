@@ -35,7 +35,7 @@ include( create_common_internals )
 #         [SIMPLE]|GRPC file1.proto
 #         [SIMPLE]|GRPC file2.proto
 #         ...]
-#     [ENABLE_CPLUSPLUS_MACRO]
+#     [MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO]
 function( create_library )
   # Set debug prefix
   set( dbg_prefix "        ${CMAKE_CURRENT_FUNCTION}():" )
@@ -52,27 +52,25 @@ function( create_library )
   unset( arg_GETTEXT_TRANSLATIONS )
   unset( arg_QT_TRANSLATIONS )
   unset( arg_PROTOBUF_FILES )
-  unset( arg_ENABLE_CPLUSPLUS_MACRO )
+  unset( arg_MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
-  # Option arguments: ENABLE_CPLUSPLUS_MACRO
+  # Option arguments: MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO
   # Single-value arguments: NAME, C_VERSION, CPP_VERSION
   # Multi-values arguments: PUBLIC_API, INCLUDES, SOURCES, DEFINITIONS, DEPENDENCIES, COMPILE_FLAGS, GETTEXT_TRANSLATIONS, QT_TRANSLATIONS, PROTOBUF_FILES
   cmake_parse_arguments( arg
-    "ENABLE_CPLUSPLUS_MACRO"
+    "MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO"
     "NAME;C_VERSION;CPP_VERSION"
     "PUBLIC_API;INCLUDES;SOURCES;DEFINITIONS;DEPENDENCIES;COMPILE_FLAGS;GETTEXT_TRANSLATIONS;QT_TRANSLATIONS;PROTOBUF_FILES" ${ARGN} )
-  
-    
-  if( arg_ENABLE_CPLUSPLUS_MACRO )
-    message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} has ${ColorFlags}__cplusplus macro${ColorReset}" )
-    if( MSVC )
-      add_compile_options("/Zc:__cplusplus")
-    endif()
-  endif()
 
   message( STATUS "----------------------------------------------------------------------------------------------------" )
   message( STATUS "Configuring library ${ColorLib}${arg_NAME}${ColorReset}" )
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the create_library function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   # Start creating the library by defining the project name
   project( ${arg_NAME} )

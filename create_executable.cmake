@@ -42,9 +42,10 @@ include( create_common_internals )
 #     [POSITION_INDEPENDENT_CODE]
 #     [NO_POSITION_INDEPENDENT_EXECUTABLE]
 #     [WARNINGS_ARE_ERRORS]
-#     [ENABLE_CPLUSPLUS_MACRO]
+#     [MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO]
 #     [OPENMP]
 #     [VS_STARTUP_PROJECT]
+#     [GUI]
 function( create_executable )
   # Set debug prefix
   set( dbg_prefix "${CMAKE_CURRENT_FUNCTION}():" )
@@ -52,9 +53,10 @@ function( create_executable )
   unset( arg_POSITION_INDEPENDENT_CODE )
   unset( arg_NO_POSITION_INDEPENDENT_EXECUTABLE )
   unset( arg_WARNINGS_ARE_ERRORS )
-  unset( arg_ENABLE_CPLUSPLUS_MACRO )
+  unset( arg_MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO )
   unset( arg_OPENMP )
   unset( arg_VS_STARTUP_PROJECT )
+  unset( arg_GUI )
   unset( arg_NAME )
   unset( arg_GLOBAL_C_VERSION )
   unset( arg_GLOBAL_CPP_VERSION )
@@ -71,14 +73,15 @@ function( create_executable )
   unset( arg_QT_TRANSLATIONS )
   unset( arg_PROTOBUF_FILES )
   unset( arg_INSTALLATION )
+  unset( arg_UNPARSED_ARGUMENTS )
 
   # Parse function arguments.
-  # Option arguments: POSITION_INDEPENDENT_CODE, NO_POSITION_INDEPENDENT_EXECUTABLE, WARNINGS_ARE_ERRORS, ENABLE_CPLUSPLUS_MACRO, OPENMP, VS_STARTUP_PROJECT
+  # Option arguments: POSITION_INDEPENDENT_CODE, NO_POSITION_INDEPENDENT_EXECUTABLE, WARNINGS_ARE_ERRORS, MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO, OPENMP, VS_STARTUP_PROJECT, GUI
   # Single-value arguments: NAME, GLOBAL_C_VERSION, GLOBAL_CPP_VERSION, C_VERSION, CPP_VERSION
   # Multi-values arguments: INCLUDES, SOURCES, DEFINITIONS, GLOBAL_DEFINITIONS, SUBDIRECTORIES, DEPENDENCIES,
   #                         COMPILE_FLAGS, GETTEXT_TRANSLATIONS, QT_TRANSLATIONS, PROTOBUF_FILES, INSTALLATION
   cmake_parse_arguments( arg
-    "POSITION_INDEPENDENT_CODE;NO_POSITION_INDEPENDENT_EXECUTABLE;WARNINGS_ARE_ERRORS;ENABLE_CPLUSPLUS_MACRO;OPENMP;VS_STARTUP_PROJECT"
+    "POSITION_INDEPENDENT_CODE;NO_POSITION_INDEPENDENT_EXECUTABLE;WARNINGS_ARE_ERRORS;MSVC_ENABLE_UPDATED_CPLUSPLUS_MACRO;OPENMP;VS_STARTUP_PROJECT;GUI"
     "NAME;GLOBAL_C_VERSION;GLOBAL_CPP_VERSION;C_VERSION;CPP_VERSION"
     "INCLUDES;SOURCES;DEFINITIONS;GLOBAL_DEFINITIONS;SUBDIRECTORIES;DEPENDENCIES;COMPILE_FLAGS;GETTEXT_TRANSLATIONS;QT_TRANSLATIONS;PROTOBUF_FILES;INSTALLATION"
     ${ARGN}
@@ -138,6 +141,11 @@ function( create_executable )
   message( STATUS "----------------------------------------------------------------------------------------------------" )
   message( STATUS "Pre-Configuring executable ${ColorLib}${arg_NAME}${ColorReset}" )
 
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the create_executable function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
+
   if( arg_GLOBAL_C_VERSION )
     message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} has global ${ColorFlags}C version ${arg_GLOBAL_C_VERSION}${ColorReset}" )
     set( CMAKE_C_STANDARD ${arg_GLOBAL_C_VERSION} )
@@ -174,13 +182,6 @@ function( create_executable )
       add_compile_options(-WX)
     else()
       add_compile_options(-Werror)
-    endif()
-  endif()
-
-  if( arg_ENABLE_CPLUSPLUS_MACRO )
-    message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} has ${ColorFlags}__cplusplus macro${ColorReset}" )
-    if( MSVC )
-      add_compile_options("/Zc:__cplusplus")
     endif()
   endif()
 
@@ -241,8 +242,19 @@ function( create_executable )
   # Compute the Qt translations
   _create_common_internals_handle_qt_translations()
 
+  # Handle the GUI executables
+  unset( GUI_FLAG )
+  if( arg_GUI )
+    if( MSVC )
+      message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} is a ${ColorFlags}Windows GUI application${ColorReset}" )
+      set( GUI_FLAG WIN32 )
+    else()
+      message( STATUS "    ${ColorLib}${arg_NAME}${ColorReset} is a ${ColorFlags}Windows GUI application${ColorReset} ${ColorWarning}(ignored because not MSVC)${ColorReset}" )
+    endif()
+  endif()
+
   # Add the executable with the source files
-  add_executable( ${arg_NAME} ${PARSED_SOURCES} )
+  add_executable( ${arg_NAME} ${GUI_FLAG} ${PARSED_SOURCES} )
 
   # Set the startup project for MSVC
   if( MSVC AND arg_VS_STARTUP_PROJECT )

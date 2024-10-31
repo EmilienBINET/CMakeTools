@@ -1,7 +1,18 @@
 # Usage: configure_sanitizer( [ASAN] [LSAN] [UBSAN] [TSAN] )
 # TSAN prevails on ASAN and LSAN
 function( configure_sanitizer )
+  unset( arg_ASAN )
+  unset( arg_LSAN )
+  unset( arg_UBSAN )
+  unset( arg_TSAN )
+  unset( arg_UNPARSED_ARGUMENTS )
+
   cmake_parse_arguments(arg "ASAN;LSAN;UBSAN;TSAN" "" "" ${ARGN})
+
+  # Stop immediately if unknown argument
+  if( arg_UNPARSED_ARGUMENTS )
+    message( FATAL_ERROR "Unknown argument(s) in the configure_sanitizer function: ${arg_UNPARSED_ARGUMENTS}" )
+  endif()
 
   message(STATUS "CONFIGURING SANITIZER")
   # ===== AddressSanitizer =====
