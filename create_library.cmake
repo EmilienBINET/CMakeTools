@@ -30,7 +30,7 @@ include( create_common_internals )
 #         ...]
 #     [COMPILE_FLAGS "flags1;flags2..."]
 #     [GETTEXT_TRANSLATIONS "src_dir1;src_dir2...;file1.po;file2.po..."]
-#     [QT_TRANSLATIONS "src_dir1;src_dir2...;file1.ts;file2.ts..."]
+#     [QT_TRANSLATIONS "src_dir1;src_dir2...;file1.ts;file2.ts...;res.qrc"]
 #     [PROTOBUF_FILES
 #         [SIMPLE]|GRPC file1.proto
 #         [SIMPLE]|GRPC file2.proto

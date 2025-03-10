@@ -33,7 +33,7 @@ include( create_common_internals )
 #         ...]
 #     [COMPILE_FLAGS "flags1;flags2..."]
 #     [GETTEXT_TRANSLATIONS "src_dir1;src_dir2...;file1.po;file2.po..."]
-#     [QT_TRANSLATIONS "src_dir1;src_dir2...;file1.ts;file2.ts..."]
+#     [QT_TRANSLATIONS "src_dir1;src_dir2...;file1.ts;file2.ts...;res.qrc"]
 #     [PROTOBUF_FILES
 #         [SIMPLE]|GRPC file1.proto
 #         [SIMPLE]|GRPC file2.proto
@@ -91,6 +91,8 @@ function( create_executable )
   message( STATUS "Information about the build" )
   if( CMAKE_BUILD_TYPE )
     message( STATUS "    Build type:         ${ColorInfo}${CMAKE_BUILD_TYPE}${ColorReset}" )
+  elseif( CMAKE_CONFIGURATION_TYPES )
+    message( STATUS "    Build type:         ${ColorInfo}MultiConfig(${CMAKE_CONFIGURATION_TYPES})${ColorReset}" )
   else()
     message( STATUS "    Build type:         ${ColorWarning}Not set${ColorReset}" )
   endif()
@@ -110,7 +112,9 @@ function( create_executable )
   message( STATUS "    Compiler" )
   if( CMAKE_TOOLCHAIN_FILE )
     message( STATUS "        Toolchain file: ${ColorInfo}${CMAKE_TOOLCHAIN_FILE}${ColorReset}" )
-    message( STATUS "        Architecture:   ${ColorInfo}${BUILD_ARCHITECTURE}${ColorReset}" )
+    if( BUILD_ARCHITECTURE )
+      message( STATUS "        Architecture:   ${ColorInfo}${BUILD_ARCHITECTURE}${ColorReset}" )
+    endif()
   else()
     message( STATUS "        Executable:     ${ColorInfo}${CMAKE_CXX_COMPILER}${ColorReset}" )
     message( STATUS "        Identifier:     ${ColorInfo}${CMAKE_CXX_COMPILER_ID}${ColorReset}" )
@@ -140,6 +144,9 @@ function( create_executable )
 
   message( STATUS "----------------------------------------------------------------------------------------------------" )
   message( STATUS "Pre-Configuring executable ${ColorLib}${arg_NAME}${ColorReset}" )
+
+  # On Visual Studio, hide CMake projects ALL_BUILD, INSTALL and ZERO_CHECK to a CMakePredefinedTargets folder
+  set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 
   # Stop immediately if unknown argument
   if( arg_UNPARSED_ARGUMENTS )
@@ -255,6 +262,13 @@ function( create_executable )
 
   # Add the executable with the source files
   add_executable( ${arg_NAME} ${GUI_FLAG} ${PARSED_SOURCES} )
+
+  # Filter files into folders in Visual Studio
+  source_group( "CMake Rules"     REGULAR_EXPRESSION "^$" ) # No one in that folder since no one can match the regex
+  source_group( "Generated Files" REGULAR_EXPRESSION "ui_.*\\.h|mocs_.*\\.cpp|qrc_.*\\.cpp|\\.stamp|\\.rule|\\.mo|\\.qm$" )
+  source_group( "Resources Files" REGULAR_EXPRESSION "\\.qrc|\\.rc$" )
+  source_group( "User Interfaces" REGULAR_EXPRESSION "\\.ui$" )
+  source_group( "Translations"    REGULAR_EXPRESSION "\\.po|\\.ts$" )
 
   # Set the startup project for MSVC
   if( MSVC AND arg_VS_STARTUP_PROJECT )
